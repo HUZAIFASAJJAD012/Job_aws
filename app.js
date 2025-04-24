@@ -40,18 +40,8 @@ app.use(express.static(buildPath));
 
 app.use('/uploads', express.static('uploads'));
 
-const allowedOrigins = process.env.FRONTEND_URL?.split(',') || [];
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-}));
+
+app.use(cors());
 
 app.use('/user', user);
 app.use('/school', school);
@@ -74,8 +64,9 @@ app.use((err, req, res, next) => {
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
-        credentials: true,
+        origin: '*', // Allow all origins
+        methods: ['GET', 'POST'], // Optional: define allowed methods
+        credentials: false        // Set to true if you use cookies or HTTP auth
     },
 });
 
