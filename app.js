@@ -23,15 +23,13 @@ const port = process.env.PORT || 8000;
 
 const connect = async () => {
     try {
-        await mongoose.connect(process.env.db2, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+        await mongoose.connect(process.env.db2);
         console.log('MongoDB connected');
     } catch (err) {
         console.error('Mongo error:', err);
     }
 };
+
 app.use(express.json());
 const __dirname = path.dirname("");
 const buildPath = path.join(__dirname,'./build');
@@ -98,7 +96,8 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
     connect();
     console.log(`Server running on port ${port}`);
 });
+
