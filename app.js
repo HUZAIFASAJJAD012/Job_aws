@@ -34,7 +34,7 @@ const connect = async () => {
 };
 app.use(express.json());
 const __dirname = path.dirname("");
-const buildPath = path.join(__dirname, './build');
+const buildPath = path.join(__dirname,'./build');
 app.use(express.static(buildPath));
 
 
@@ -65,8 +65,7 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         origin: '*', // Allow all origins
-        methods: ['GET', 'POST'], // Optional: define allowed methods
-        credentials: false        // Set to true if you use cookies or HTTP auth
+       // Set to true if you use cookies or HTTP auth
     },
 });
 
