@@ -43,8 +43,7 @@ app.use('/uploads', express.static('uploads'));
 
 app.use(cors({
     origin: '*', // Allow all origins
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // Allow credentials like cookies, authorization headers, etc.
+   // Allow credentials like cookies, authorization headers, etc.
   }));
 
 app.use('/user', user);
