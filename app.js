@@ -38,18 +38,12 @@ app.use(express.static(buildPath));
 
 app.use('/uploads', express.static('uploads'));
 
-const allowedOrigins = process.env.FRONTEND_URL?.split(',') || [];
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Reflects the request origin
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
 }));
+
 app.use('/user', user);
 app.use('/school', school);
 
