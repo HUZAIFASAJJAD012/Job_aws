@@ -23,27 +23,26 @@ const port = process.env.PORT || 8000;
 
 const connect = async () => {
     try {
-        await mongoose.connect(process.env.db2);
+        await mongoose.connect(process.env.db2, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
         console.log('MongoDB connected');
     } catch (err) {
         console.error('Mongo error:', err);
     }
 };
-
 app.use(express.json());
 const __dirname = path.dirname("");
-const buildPath = path.join(__dirname, './build');
+const buildPath = path.join(__dirname,'./build');
 app.use(express.static(buildPath));
 
 
 app.use('/uploads', express.static('uploads'));
 
-app.use(cors({
-    origin: ['http://54.175.124.76:8000', 'http://13.61.151.194:8000'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  }));
-  
+
+app.use(cors());
+
 app.use('/user', user);
 app.use('/school', school);
 
@@ -99,8 +98,7 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, () => {
     connect();
     console.log(`Server running on port ${port}`);
 });
-
