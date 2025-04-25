@@ -41,7 +41,11 @@ app.use(express.static(buildPath));
 app.use('/uploads', express.static('uploads'));
 
 
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // Allow credentials like cookies, authorization headers, etc.
+  }));
 
 app.use('/user', user);
 app.use('/school', school);
