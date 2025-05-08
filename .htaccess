@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Don't rewrite existing files or directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Redirect everything else to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Handle 404s by redirecting to index.html (for deep linking)
+ErrorDocument 404 /index.html
