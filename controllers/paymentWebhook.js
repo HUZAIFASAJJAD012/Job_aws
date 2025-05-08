@@ -23,7 +23,9 @@ export const handleStripeWebhook = async (req, res) => {
   }
 
   if (event.type === 'checkout.session.completed') {
+    console.log('✅ Checkout session completed:', event.id);
     const session = event.data.object;
+    console.log('Session:', session);
 
     // Calculate expiry date for school subscriptions
     let expiryDate = null;

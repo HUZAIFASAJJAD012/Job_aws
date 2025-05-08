@@ -53,6 +53,8 @@ console.log('Build path:', buildPath);
 
 // CORS configuration
 const allowedOrigins = process.env.FRONTEND_URL.split(',');
+console.log('Allowed origins:', allowedOrigins);
+
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
