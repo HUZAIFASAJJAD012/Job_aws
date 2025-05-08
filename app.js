@@ -23,7 +23,7 @@ import Message from './models/Message.js';
 // Load environment variables
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || '8000';
 
 // Connect to MongoDB
 const connect = async () => {
@@ -32,42 +32,42 @@ const connect = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log('✅ MongoDB connected successfully');
+    console.log('MongoDB connected successfully');
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error);
+    console.error('MongoDB connection failed:', error);
   }
 };
 
 // Setup __dirname for ES module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const buildPath = path.join(__dirname, 'build');
 
-// Stripe webhook (must come before express.json())
-app.post('/api/payment/webhook', express.raw({ type: 'application/json' }));
+const __filename = fileURLToPath(import.meta.url);
+console.log('File name:', __filename);
+const __dirname = path.dirname(__filename);
+console.log('Directory name:', __dirname);
+
+const buildPath = path.join(__dirname, './build');
+console.log('Build path:', buildPath);
+
+
+// Stripe webhook route (must use raw body)
 
 // CORS configuration
-const allowedOrigins = process.env.FRONTEND_URL?.split(',') || [];
-app.use(
-  cors({
+const allowedOrigins = process.env.FRONTEND_URL.split(',');
+app.use(cors({
     origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
     },
     credentials: true,
-  })
-);
+}));
+app.post('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
-// JSON & static middleware
+// JSON and static middleware
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/static', express.static(path.join(buildPath, 'static')));
-app.use('/assets', express.static(path.join(buildPath, 'assets')));
-app.use('/favicon.ico', express.static(path.join(buildPath, 'favicon.ico')));
-app.use('/manifest.json', express.static(path.join(buildPath, 'manifest.json')));
+app.use('/uploads', express.static('uploads'));
 app.use(express.static(buildPath));
 
 // API routes
@@ -79,24 +79,19 @@ app.use('/rating', Rating);
 app.use('/conversations', conversations);
 app.use('/messages', messages);
 
-// Serve React index.html for all other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
-});
-
-// Error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
-  const errorMessage = err.message || 'Something went wrong';
+  const errorMessage = err.message || "Something went wrong";
   res.status(errorStatus).json({
     success: false,
     status: errorStatus,
     message: errorMessage,
-    stack: err.stack,
+    stack: err.stack
   });
 });
 
-// Create HTTP server and socket
+// Create server and Socket.IO
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -107,11 +102,11 @@ const io = new Server(server, {
 
 // Socket.IO events
 io.on('connection', (socket) => {
-  console.log('🔌 User connected:', socket.id);
+  console.log('User connected:', socket.id);
 
   socket.on('join', (userId) => {
     socket.join(userId);
-    console.log(`👤 User ${userId} joined their room`);
+    console.log(`User ${userId} joined their room`);
   });
 
   socket.on('send_message', async ({ sender, receiver, content }) => {
@@ -126,7 +121,7 @@ io.on('connection', (socket) => {
       const newMessage = new Message({
         chatId: chat._id,
         sender,
-        content,
+        content
       });
 
       await newMessage.save();
@@ -134,17 +129,17 @@ io.on('connection', (socket) => {
       io.to(receiver).emit('receive_message', newMessage);
       io.to(sender).emit('receive_message', newMessage);
     } catch (error) {
-      console.error('❌ Error sending message:', error);
+      console.error('Error sending message:', error);
     }
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ User disconnected:', socket.id);
+    console.log('User disconnected:', socket.id);
   });
 });
 
-// Start the server
+// Start server
 server.listen(port, () => {
   connect();
-  console.log(`🚀 Server is running at http://localhost:${port}`);
+  console.log(`Server is running at http://localhost:${port}`);
 });
