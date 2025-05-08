@@ -140,6 +140,10 @@ io.on('connection', (socket) => {
   });
 });
 
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
 // Start server
 server.listen(port, () => {
   connect();
