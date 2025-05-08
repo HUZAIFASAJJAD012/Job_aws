@@ -40,7 +40,7 @@ const connect = async () => {
 
 // Setup __dirname for ES module
 const __filename = fileURLToPath(import.meta.url);
-const _dirname = path.dirname(_filename);
+const __dirname = path.dirname(__filename);
 const buildPath = path.join(__dirname, 'build');
 
 // Stripe webhook (must come before express.json())
@@ -111,7 +111,7 @@ io.on('connection', (socket) => {
 
   socket.on('join', (userId) => {
     socket.join(userId);
-    console.log(`🔑 User ${userId} joined room`);
+    console.log(`👤 User ${userId} joined their room`);
   });
 
   socket.on('send_message', async ({ sender, receiver, content }) => {
