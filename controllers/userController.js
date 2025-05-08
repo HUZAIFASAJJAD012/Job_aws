@@ -1,8 +1,9 @@
+import Payment from "../models/paymentModel.js";
 import user from "../models/userModel.js";
 import Profile from "../models/profileModel.js";
 import JobApplied from "../models/appliedJob.js";
 import createError from "../utils/error.js";
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 // import lawyerModel from "../models/lawyerModel.js"; // Uncomment if lawyerModel is available
 
 class UserController {
@@ -188,6 +189,7 @@ class UserController {
     };
 
     static deleteDocById = async (req, res, next) => {
+        console.log("Hit DELETE /delete/:id", req.params.id);
         try {
             const result = await user.findByIdAndDelete(req.params.id);
 
@@ -205,6 +207,7 @@ class UserController {
         try {
             const users = await user.find();
             // const attorneys = await lawyerModel.find(); // Uncomment if lawyerModel is imported
+            const transactions = await Payment.find();
 
             res.status(200).send({
                 users: users.length > 0 ? users : 0,
