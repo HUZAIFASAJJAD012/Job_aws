@@ -45,7 +45,7 @@ const __dirname = path.dirname(__filename);
 const buildPath = path.join(__dirname, './build');
 
 // CORS configuration
-const allowedOrigins = process.env.FRONTEND_URL.split(',');
+const allowedOrigins = process.env.FRONTEND_URL?.split(',') || ['*'];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -63,6 +63,8 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }));
 // Middleware
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
+
+// Serve static files from React build folder
 app.use(express.static(buildPath));
 
 // API routes
@@ -74,6 +76,11 @@ app.use('/rating', Rating);
 app.use('/conversations', conversations);
 app.use('/messages', messages);
 
+// Fallback route to serve React app for unknown paths
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
@@ -82,11 +89,11 @@ app.use((err, req, res, next) => {
     success: false,
     status: errorStatus,
     message: errorMessage,
-    stack: err.stack
+    stack: err.stack,
   });
 });
 
-// Main server logic
+// Start the server
 const startServer = async () => {
   const port = await detect(DEFAULT_PORT);
 
@@ -119,7 +126,7 @@ const startServer = async () => {
         const newMessage = new Message({
           chatId: chat._id,
           sender,
-          content
+          content,
         });
 
         await newMessage.save();
