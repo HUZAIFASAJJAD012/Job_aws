@@ -20,7 +20,7 @@ import messages from './routes/messages.js';
 // Import models
 import Chat from './models/Chat.js';
 import Message from './models/Message.js';
-
+//backend
 // Load environment variables
 dotenv.config();
 const app = express();
