@@ -1,31 +1,37 @@
 import multer from 'multer';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// Set up storage configuration
+// To get __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Define storage engine with absolute path
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads'); // Specify the folder to store uploaded files
+        cb(null, path.join(__dirname, 'uploads')); // absolute path
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`); // Unique file name
+        cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
     },
 });
 
-// Set up file filter to accept images only
+// Allowed image formats
 const fileFilter = (req, file, cb) => {
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Invalid file type. Only JPEG, PNG, and JPG files are allowed.'));
+        cb(new Error('Only JPEG, PNG, and JPG files are allowed.'));
     }
 };
 
-// Multer middleware
+// Export configured multer instance
 const upload = multer({
     storage: storage,
-    limits: {fileSize: 2 * 1024 * 1024}, // Limit file size to 2MB
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
     fileFilter: fileFilter,
 });
 
