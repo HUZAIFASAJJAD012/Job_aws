@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import detect from 'detect-port';
-
+import notificationRoutes from './routes/notificationRoutes.js';
 // Import routes
 import user from './routes/user.js';
 import school from './routes/school.js';
@@ -45,7 +45,7 @@ const __dirname = path.dirname(__filename);
 const buildPath = path.join(__dirname, './build');
 
 // CORS configuration
-const allowedOrigins = process.env.FRONTEND_URL?.split(',') || ['*'];
+const allowedOrigins = process.env.FRONTEND_URL.split(',');
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -63,8 +63,6 @@ app.post('/api/payment/webhook', express.raw({ type: 'application/json' }));
 // Middleware
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
-
-// Serve static files from React build folder
 app.use(express.static(buildPath));
 
 // API routes
@@ -75,12 +73,7 @@ app.use('/auth', authentication);
 app.use('/rating', Rating);
 app.use('/conversations', conversations);
 app.use('/messages', messages);
-
-// Fallback route to serve React app for unknown paths
-app.get('*', (req, res) => {
-  res.sendFile(path.join(buildPath, 'index.html'));
-});
-
+app.use('/notifications', notificationRoutes);
 // Error handler
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
@@ -89,11 +82,11 @@ app.use((err, req, res, next) => {
     success: false,
     status: errorStatus,
     message: errorMessage,
-    stack: err.stack,
+    stack: err.stack
   });
 });
 
-// Start the server
+// Main server logic
 const startServer = async () => {
   const port = await detect(DEFAULT_PORT);
 
@@ -114,30 +107,85 @@ const startServer = async () => {
       console.log(`User ${userId} joined their room`);
     });
 
-    socket.on('send_message', async ({ sender, receiver, content }) => {
-      try {
-        let chat = await Chat.findOne({ members: { $all: [sender, receiver] } });
+   // Replace your socket.on('send_message') handler with this:
 
-        if (!chat) {
-          chat = new Chat({ members: [sender, receiver] });
-          await chat.save();
-        }
+socket.on('send_message', async ({ sender, receiver, content, conversationId }) => {
+  try {
+    let chat;
+    
+    if (conversationId) {
+      // Use existing conversation
+      chat = await Chat.findById(conversationId);
+    } else {
+      // Find or create new conversation
+      chat = await Chat.findOne({ members: { $all: [sender, receiver] } });
+      
+      if (!chat) {
+        chat = new Chat({ members: [sender, receiver] });
+        await chat.save();
+      }
+    }
 
-        const newMessage = new Message({
-          chatId: chat._id,
-          sender,
-          content,
+    const newMessage = new Message({
+      chatId: chat._id,
+      sender,
+      content,
+      timestamp: new Date(),
+      isRead: false // Important: messages start as unread
+    });
+
+    await newMessage.save();
+
+    // Create the message object to send to clients
+    const messageToSend = {
+      _id: newMessage._id,
+      chatId: newMessage.chatId,
+      sender: newMessage.sender,
+      content: newMessage.content,
+      timestamp: newMessage.timestamp,
+      isRead: newMessage.isRead,
+      conversationId: chat._id // This is crucial for frontend
+    };
+
+    // Send to both sender and receiver
+    io.to(receiver).emit('receive_message', messageToSend);
+    io.to(sender).emit('receive_message', messageToSend);
+    
+    console.log(`Message sent from ${sender} to ${receiver}: ${content}`);
+  } catch (error) {
+    console.error('Error sending message:', error);
+    socket.emit('message_error', { error: 'Failed to send message' });
+  }
+});
+// Add this to your backend app.js socket handlers:
+
+socket.on('message_read', async ({ messageId, readBy, conversationId }) => {
+  try {
+    // Update message as read in database
+    await Message.findByIdAndUpdate(messageId, { 
+      isRead: true,
+      $push: { readBy: { userId: readBy, readAt: new Date() } }
+    });
+
+    // Find the chat to get both members
+    const chat = await Chat.findById(conversationId);
+    
+    // Send read receipt to the original sender
+    chat.members.forEach(memberId => {
+      if (memberId.toString() !== readBy.toString()) {
+        io.to(memberId.toString()).emit('message_read', {
+          messageId,
+          readBy,
+          conversationId
         });
-
-        await newMessage.save();
-
-        io.to(receiver).emit('receive_message', newMessage);
-        io.to(sender).emit('receive_message', newMessage);
-      } catch (error) {
-        console.error('Error sending message:', error);
       }
     });
 
+    console.log(`Message ${messageId} marked as read by ${readBy}`);
+  } catch (error) {
+    console.error('Error handling message read:', error);
+  }
+});
     socket.on('disconnect', () => {
       console.log('User disconnected:', socket.id);
     });
