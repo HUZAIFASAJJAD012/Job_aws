@@ -97,6 +97,9 @@ const startServer = async () => {
       credentials: true,
     },
   });
+app.get('*', (req, res) => {
+  res.sendFile(path.join(buildPath, 'index.html'));
+});
 
   // Socket.IO events
   io.on('connection', (socket) => {
